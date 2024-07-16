@@ -24,7 +24,7 @@ pub enum Type {
 }
 
 impl Type {
-    // Generate the transpliled code
+    /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => format!(
@@ -66,14 +66,23 @@ pub type Block = Vec<Instruction>;
 /// Program's normal instruction
 #[derive(Debug, Clone)]
 pub enum Instruction {
+    /// Standard output
     Print(Expr),
+    /// Define variable
     Let(String, Expr),
+    /// Define constance
     Const(String, Expr),
+    /// Change variable's data
     Variable(String, Expr),
+    /// If-else conditional branch
     If(Expr, Block, Block),
+    /// While loop
     While(Expr, Block),
+    /// Define function
     Function(String, Vec<String>, Block),
+    /// Call library function
     Call(String, Vec<Expr>),
+    /// Code comment
     Comment(String),
 }
 
@@ -130,9 +139,13 @@ impl Instruction {
 /// Expression
 #[derive(Debug, Clone)]
 pub enum Expr {
+    /// Expression in the brackets
     Expr(Vec<Expr>),
+    /// Operator of the expression
     Operator(Operator),
+    /// Literal data
     Literal(Type),
+    /// Variable reference
     Variable(String),
 }
 
