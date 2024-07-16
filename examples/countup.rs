@@ -1,9 +1,18 @@
 use sila_transpiler_infrastructure::{
-    transpile_javascript, Block, Expr, Instruction, Operator, Type,
+    transpile_javascript, transpile_ruby, Block, Expr, Instruction, Operator, Type,
 };
 
 fn main() {
     let program: Block = vec![
+        Instruction::Function(
+            "show".to_string(),
+            vec!["i".to_string()],
+            vec![Instruction::Return(Some(Expr::Expr(vec![
+                Expr::Literal(Type::String("counter value is ".to_string())),
+                Expr::Operator(Operator::Add),
+                Expr::Call("String".to_string(), vec![Expr::Variable("i".to_string())]),
+            ])))],
+        ),
         Instruction::Let("i".to_string(), Expr::Literal(Type::Integer(0))),
         Instruction::While(
             Expr::Expr(vec![
@@ -20,13 +29,13 @@ fn main() {
                         Expr::Literal(Type::Integer(1)),
                     ]),
                 ),
-                Instruction::Print(Expr::Expr(vec![
-                    Expr::Literal(Type::String("i: ".to_string())),
-                    Expr::Operator(Operator::Add),
-                    Expr::Variable("i".to_string()),
-                ])),
+                Instruction::Print(Expr::Call(
+                    "show".to_string(),
+                    vec![Expr::Variable("i".to_string())],
+                )),
             ],
         ),
     ];
-    println!("{}", transpile_javascript(program));
+    println!("{}", transpile_javascript(program.clone()));
+    println!("{}", transpile_ruby(program));
 }
