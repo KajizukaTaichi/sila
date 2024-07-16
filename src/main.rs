@@ -57,6 +57,7 @@ type Block = Vec<Instruction>;
 enum Instruction {
     Print(Expr),
     Let(String, Expr),
+    Variable(String, Expr),
     If(Expr, Block, Block),
     While(Expr, Block),
 }
@@ -68,6 +69,9 @@ impl Instruction {
                 Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
                 Instruction::Let(name, value) => {
                     format!("let {name} = {}", value.codegen(platform))
+                }
+                Instruction::Variable(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
                 }
                 Instruction::If(condition, true_block, false_block) => format!(
                     "if {} {} else {}",
@@ -177,8 +181,22 @@ fn main() {
             Expr::Expr(vec![Expr::Literal(Type::Integer(0))]),
         ),
         Instruction::While(
-            Expr::Expr(vec![Expr::Literal(Type::Integer(0))]),
-            Expr::Expr(vec![Expr::Literal(Type::Integer(0))]),
+            Expr::Expr(vec![
+                Expr::Variable("i".to_string()),
+                Expr::Operator(Operator::Less),
+                Expr::Literal(Type::Integer(10)),
+            ]),
+            vec![
+                Instruction::Let(
+                    "i".to_string(),
+                    Expr::Expr(vec![
+                        Expr::Variable("i".to_string()),
+                        Expr::Operator(Operator::Add),
+                        Expr::Literal(Type::Integer(1)),
+                    ]),
+                ),
+                Instruction::Print(Expr::Variable("i".to_string())),
+            ],
         ),
     ];
     println!("{}", codegen_block(program, Platform::JavaScript));
