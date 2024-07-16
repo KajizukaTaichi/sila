@@ -36,6 +36,6 @@ fn main() {
             ],
         ),
     ];
-    println!("{}", transpile_javascript(program.clone()));
-    println!("{}", transpile_ruby(program));
+    println!("JavaScript:\n{}\n", transpile_javascript(program.clone()));
+    println!("Ruby:\n{}\n", transpile_ruby(program));
 }
