@@ -4,6 +4,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 enum Platform {
     JavaScript,
+    Ruby,
 }
 
 /// Deta type
@@ -21,6 +22,8 @@ pub enum Type {
     Array(Vec<Type>),
     /// Dictionary or object
     Dict(HashMap<Type, Type>),
+    /// Symbol such as key of the hashmap, object and dictionary, etc
+    Symbol(String),
 }
 
 impl Type {
@@ -54,6 +57,37 @@ impl Type {
                             .collect::<Vec<String>>()
                             .join(",\n")
                     ),
+                    Type::Symbol(s) => s,
+                }
+            ),
+            Platform::Ruby => format!(
+                "{}",
+                match self.clone() {
+                    Type::Integer(i) => i.to_string(),
+                    Type::Float(f) => f.to_string(),
+                    Type::String(s) => format!("\"{s}\""),
+                    Type::Array(a) => format!(
+                        "[{}]",
+                        a.iter()
+                            .map(|i| i.clone().codegen(platform.clone()))
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    ),
+                    Type::Bool(b) => b.to_string(),
+                    Type::Dict(d) => format!(
+                        "{{{}}}",
+                        d.iter()
+                            .map(|(k, v)| {
+                                format!(
+                                    "{}:{}",
+                                    k.codegen(platform.clone()),
+                                    v.codegen(platform.clone())
+                                )
+                            })
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    ),
+                    Type::Symbol(s) => s,
                 }
             ),
         }
@@ -80,10 +114,10 @@ pub enum Instruction {
     While(Expr, Block),
     /// Define function
     Function(String, Vec<String>, Block),
-    /// Call library function
-    Call(String, Vec<Expr>),
     /// Code comment
     Comment(String),
+    /// Return value
+    Return(Option<Expr>),
 }
 
 impl Instruction {
@@ -117,18 +151,60 @@ impl Instruction {
                     args.join(", "),
                     codegen_block(code_block.clone(), platform.clone()),
                 ),
-                Instruction::Call(identify, args) => format!(
-                    "{identify}({})",
-                    args.iter()
-                        .map(|i| i.codegen(platform.clone()))
-                        .collect::<Vec<String>>()
-                        .join(", ")
-                ),
                 Instruction::Comment(data) => {
                     if data.contains("\n") {
                         format!("/* {data} */")
                     } else {
                         format!("// {data}")
+                    }
+                }
+                Instruction::Return(v) => {
+                    if v.clone().is_some() {
+                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                    } else {
+                        "return".to_string()
+                    }
+                }
+            },
+            Platform::Ruby => match self {
+                Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
+                Instruction::Let(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Const(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Variable(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::If(condition, true_block, false_block) => format!(
+                    "if {}\n{}\nelse\n{}\nend",
+                    condition.codegen(platform.clone()),
+                    codegen_block(true_block.clone(), platform.clone()),
+                    codegen_block(false_block.clone(), platform)
+                ),
+                Instruction::While(condition, code_block) => format!(
+                    "while {} do\n{}\nend",
+                    condition.codegen(platform.clone()),
+                    codegen_block(code_block.clone(), platform.clone()),
+                ),
+                Instruction::Function(name, args, code_block) => format!(
+                    "def {name}({})\n{}\nend",
+                    args.join(", "),
+                    codegen_block(code_block.clone(), platform.clone()),
+                ),
+                Instruction::Comment(data) => {
+                    if data.contains("\n") {
+                        format!("=begin\n{data}\n=end")
+                    } else {
+                        format!("# {data}")
+                    }
+                }
+                Instruction::Return(v) => {
+                    if v.clone().is_some() {
+                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                    } else {
+                        "return".to_string()
                     }
                 }
             },
@@ -147,13 +223,15 @@ pub enum Expr {
     Literal(Type),
     /// Variable reference
     Variable(String),
+    /// Call library function
+    Call(String, Vec<Expr>),
 }
 
 impl Expr {
     /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
-            Platform::JavaScript => match self {
+            Platform::JavaScript | Platform::Ruby => match self {
                 Expr::Expr(exprs) => format!(
                     "({})",
                     exprs
@@ -165,6 +243,13 @@ impl Expr {
                 Expr::Literal(value) => value.codegen(platform.clone()),
                 Expr::Operator(o) => o.codegen(platform.clone()),
                 Expr::Variable(v) => v.clone(),
+                Expr::Call(identify, args) => format!(
+                    "{identify}({})",
+                    args.iter()
+                        .map(|i| i.codegen(platform.clone()))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                ),
             },
         }
     }
@@ -209,7 +294,7 @@ impl Operator {
     /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform {
-            Platform::JavaScript => match self {
+            Platform::JavaScript | Platform::Ruby => match self {
                 Operator::Add => "+",
                 Operator::Sub => "-",
                 Operator::Mul => "*",
@@ -242,6 +327,14 @@ fn codegen_block(program: Block, platform: Platform) -> String {
                 .collect::<Vec<String>>()
                 .join(";\n")
         ),
+        Platform::Ruby => format!(
+            "{}",
+            program
+                .iter()
+                .map(|x| x.codegen(platform.clone()))
+                .collect::<Vec<String>>()
+                .join("\n")
+        ),
     }
 }
 
@@ -250,5 +343,13 @@ pub fn transpile_javascript(program: Block) -> String {
     format!(
         "// Sila transpiled this code\n{}",
         codegen_block(program, Platform::JavaScript)
+    )
+}
+
+/// Transpile to Ruby
+pub fn transpile_ruby(program: Block) -> String {
+    format!(
+        "# Sila transpiled this code\n{}",
+        codegen_block(program, Platform::Ruby)
     )
 }
