@@ -1,5 +1,6 @@
 # Sila
-The simple transpiler infrastructure for every platform
+The simple transpiler infrastructure for every platform. But, now is support JavaScript and Ruby. Other platforms are coming soon!
+
 # [Example](/examples/countup.rs)
 ```rust
 use sila_transpiler_infrastructure::{
@@ -71,4 +72,3 @@ puts show(i)
 end
 
 ```
-But, now is support JavaScript and Ruby. Other platforms are coming soon!
