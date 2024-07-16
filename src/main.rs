@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 enum Platform {
@@ -60,6 +60,8 @@ enum Instruction {
     Variable(String, Expr),
     If(Expr, Block, Block),
     While(Expr, Block),
+    Function(Vec<String>, Block),
+    Call(String, Vec<Expr>),
 }
 
 impl Instruction {
@@ -83,6 +85,18 @@ impl Instruction {
                     "while {} {}",
                     condition.codegen(platform.clone()),
                     codegen_block(code_block.clone(), platform.clone()),
+                ),
+                Instruction::Function(args, code_block) => format!(
+                    "function ({}) {}",
+                    args.join(", "),
+                    codegen_block(code_block.clone(), platform.clone()),
+                ),
+                Instruction::Call(identify, args) => format!(
+                    "{identify}({})",
+                    args.iter()
+                        .map(|i| i.codegen(platform.clone()))
+                        .collect::<Vec<String>>()
+                        .join(", ")
                 ),
             },
         }
@@ -176,10 +190,7 @@ fn codegen_block(program: Block, platform: Platform) -> String {
 
 fn main() {
     let program: Block = vec![
-        Instruction::Let(
-            "i".to_string(),
-            Expr::Expr(vec![Expr::Literal(Type::Integer(0))]),
-        ),
+        Instruction::Let("i".to_string(), Expr::Literal(Type::Integer(0))),
         Instruction::While(
             Expr::Expr(vec![
                 Expr::Variable("i".to_string()),
@@ -195,7 +206,11 @@ fn main() {
                         Expr::Literal(Type::Integer(1)),
                     ]),
                 ),
-                Instruction::Print(Expr::Variable("i".to_string())),
+                Instruction::Print(Expr::Expr(vec![
+                    Expr::Literal(Type::String("i: ".to_string())),
+                    Expr::Operator(Operator::Add),
+                    Expr::Variable("i".to_string()),
+                ])),
             ],
         ),
     ];
