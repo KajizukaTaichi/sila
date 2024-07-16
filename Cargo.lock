@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "sila"
+name = "sila-transpiler-infrastructure"
 version = "0.1.0"
