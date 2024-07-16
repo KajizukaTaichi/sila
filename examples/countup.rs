@@ -1,4 +1,6 @@
-use sila::{transpile_javascript, Block, Expr, Instruction, Operator, Type};
+use sila_transpiler_infrastructure::{
+    transpile_javascript, Block, Expr, Instruction, Operator, Type,
+};
 
 fn main() {
     let program: Block = vec![
