@@ -49,26 +49,24 @@ fn main() {
 ```
 JavaScript:
 // Sila transpiled this code
-{
 function show(i) {
-return (`counter value is ` + String(i))
+    return (`counter value is ` + String(i))
 };
 let i = 0;
 while (i < 10) {
-i = (i + 1);
-console.log(show(i))
-}
+    i = (i + 1);
+    console.log(show(i))
 }
 
 Ruby:
 # Sila transpiled this code
 def show(i)
-return ("counter value is " + String(i))
+    return ("counter value is " + String(i))
 end
 i = 0
 while (i < 10) do
-i = (i + 1)
-puts show(i)
+    i = (i + 1)
+    puts show(i)
 end
 
 ```
