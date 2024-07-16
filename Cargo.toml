@@ -1,9 +1,10 @@
 [package]
 name = "sila-transpiler-infrastructure"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 authors = ["梶塚太智 <kajizukataichi@outlook.jp>"]
 description = "The simple transpiler infrastructure for every platform"
+repository = "https://github.com/KajizukaTaichi/sila"
 
 [dependencies]
