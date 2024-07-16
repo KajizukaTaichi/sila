@@ -187,7 +187,7 @@ fn main() {
                 Expr::Literal(Type::Integer(10)),
             ]),
             vec![
-                Instruction::Let(
+                Instruction::Variable(
                     "i".to_string(),
                     Expr::Expr(vec![
                         Expr::Variable("i".to_string()),
