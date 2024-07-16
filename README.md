@@ -1,5 +1,5 @@
 # Sila
-The simple transpiler infrastructure for every platform. But, now is support JavaScript and Ruby. Other platforms are coming soon!
+The simple transpiler infrastructure for every platform. But, now is support JavaScript and Ruby.<br> Other platforms are coming soon!
 
 # [Example](/examples/countup.rs)
 ```rust
