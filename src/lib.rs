@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
+/// Supported platform to transpile
 #[derive(Debug, Clone)]
 enum Platform {
     JavaScript,
 }
 
+/// Deta type
 #[derive(Debug, Clone)]
-enum Type {
+pub enum Type {
     Integer(i64),
     Float(f64),
     String(String),
@@ -16,6 +18,7 @@ enum Type {
 }
 
 impl Type {
+    // Generate
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => format!(
@@ -51,17 +54,21 @@ impl Type {
     }
 }
 
-type Block = Vec<Instruction>;
+/// Code block
+pub type Block = Vec<Instruction>;
 
+/// Program's normal instruction
 #[derive(Debug, Clone)]
-enum Instruction {
+pub enum Instruction {
     Print(Expr),
     Let(String, Expr),
+    Const(String, Expr),
     Variable(String, Expr),
     If(Expr, Block, Block),
     While(Expr, Block),
     Function(Vec<String>, Block),
     Call(String, Vec<Expr>),
+    Comment(String),
 }
 
 impl Instruction {
@@ -71,6 +78,9 @@ impl Instruction {
                 Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
                 Instruction::Let(name, value) => {
                     format!("let {name} = {}", value.codegen(platform))
+                }
+                Instruction::Const(name, value) => {
+                    format!("const {name} = {}", value.codegen(platform))
                 }
                 Instruction::Variable(name, value) => {
                     format!("{name} = {}", value.codegen(platform))
@@ -98,13 +108,21 @@ impl Instruction {
                         .collect::<Vec<String>>()
                         .join(", ")
                 ),
+                Instruction::Comment(data) => {
+                    if data.contains("\n") {
+                        format!("/* {data} */")
+                    } else {
+                        format!("// {data}")
+                    }
+                }
             },
         }
     }
 }
 
+/// Expression
 #[derive(Debug, Clone)]
-enum Expr {
+pub enum Expr {
     Expr(Vec<Expr>),
     Operator(Operator),
     Literal(Type),
@@ -131,8 +149,9 @@ impl Expr {
     }
 }
 
+/// Operator of expression
 #[derive(Debug, Clone)]
-enum Operator {
+pub enum Operator {
     Add,
     Sub,
     Mul,
@@ -175,6 +194,7 @@ impl Operator {
     }
 }
 
+/// generate code of blocked
 fn codegen_block(program: Block, platform: Platform) -> String {
     match platform {
         Platform::JavaScript => format!(
@@ -188,31 +208,10 @@ fn codegen_block(program: Block, platform: Platform) -> String {
     }
 }
 
-fn main() {
-    let program: Block = vec![
-        Instruction::Let("i".to_string(), Expr::Literal(Type::Integer(0))),
-        Instruction::While(
-            Expr::Expr(vec![
-                Expr::Variable("i".to_string()),
-                Expr::Operator(Operator::Less),
-                Expr::Literal(Type::Integer(10)),
-            ]),
-            vec![
-                Instruction::Variable(
-                    "i".to_string(),
-                    Expr::Expr(vec![
-                        Expr::Variable("i".to_string()),
-                        Expr::Operator(Operator::Add),
-                        Expr::Literal(Type::Integer(1)),
-                    ]),
-                ),
-                Instruction::Print(Expr::Expr(vec![
-                    Expr::Literal(Type::String("i: ".to_string())),
-                    Expr::Operator(Operator::Add),
-                    Expr::Variable("i".to_string()),
-                ])),
-            ],
-        ),
-    ];
-    println!("{}", codegen_block(program, Platform::JavaScript));
+/// Transpile to javascript
+pub fn transpile_javascript(program: Block) -> String {
+    format!(
+        "// Sila transpiled this code\n{}",
+        codegen_block(program, Platform::JavaScript)
+    )
 }
