@@ -2,5 +2,6 @@
 name = "sila"
 version = "0.1.0"
 edition = "2021"
+description = "The simple transpiler infrastructure for every platform"
 
 [dependencies]
