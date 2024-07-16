@@ -9,16 +9,22 @@ enum Platform {
 /// Deta type
 #[derive(Debug, Clone)]
 pub enum Type {
+    /// 64 bit integer
     Integer(i64),
+    /// 64 bit float number
     Float(f64),
+    /// String of UTF-8
     String(String),
+    /// Bool of true or false
     Bool(bool),
+    /// Array doesn't mind about type
     Array(Vec<Type>),
+    /// Dictionary or object
     Dict(HashMap<Type, Type>),
 }
 
 impl Type {
-    // Generate
+    // Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => format!(
@@ -66,12 +72,13 @@ pub enum Instruction {
     Variable(String, Expr),
     If(Expr, Block, Block),
     While(Expr, Block),
-    Function(Vec<String>, Block),
+    Function(String, Vec<String>, Block),
     Call(String, Vec<Expr>),
     Comment(String),
 }
 
 impl Instruction {
+    /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => match self {
@@ -96,8 +103,8 @@ impl Instruction {
                     condition.codegen(platform.clone()),
                     codegen_block(code_block.clone(), platform.clone()),
                 ),
-                Instruction::Function(args, code_block) => format!(
-                    "function ({}) {}",
+                Instruction::Function(name, args, code_block) => format!(
+                    "function {name}({}) {}",
                     args.join(", "),
                     codegen_block(code_block.clone(), platform.clone()),
                 ),
@@ -130,6 +137,7 @@ pub enum Expr {
 }
 
 impl Expr {
+    /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => match self {
@@ -152,24 +160,40 @@ impl Expr {
 /// Operator of expression
 #[derive(Debug, Clone)]
 pub enum Operator {
+    /// Addition
     Add,
+    /// Subtraction
     Sub,
+    /// Multiplication
     Mul,
+    /// Division
     Div,
+    /// Power
     Pow,
+    /// Modulo
     Mod,
+    /// Equal
     Equal,
+    /// Not equal
     NotEq,
+    /// Lessthan
     Less,
+    /// Lessthan with equal
     LessEq,
+    /// Greaterthan
     Greater,
+    /// Greaterthan with equal
     GreaterEq,
+    /// Logial and
     And,
+    /// Logical or
     Or,
+    /// Logial not
     Not,
 }
 
 impl Operator {
+    /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform {
             Platform::JavaScript => match self {
@@ -194,7 +218,7 @@ impl Operator {
     }
 }
 
-/// generate code of blocked
+/// generate transpiled code of blocked
 fn codegen_block(program: Block, platform: Platform) -> String {
     match platform {
         Platform::JavaScript => format!(
@@ -208,7 +232,7 @@ fn codegen_block(program: Block, platform: Platform) -> String {
     }
 }
 
-/// Transpile to javascript
+/// Transpile to JavaScript
 pub fn transpile_javascript(program: Block) -> String {
     format!(
         "// Sila transpiled this code\n{}",
