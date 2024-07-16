@@ -122,93 +122,94 @@ pub enum Instruction {
 
 impl Instruction {
     /// Generate the transpliled code
-    fn codegen(&self, platform: Platform) -> String {
-        match platform.clone() {
-            Platform::JavaScript => match self {
-                Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
-                Instruction::Let(name, value) => {
-                    format!("let {name} = {}", value.codegen(platform))
-                }
-                Instruction::Const(name, value) => {
-                    format!("const {name} = {}", value.codegen(platform))
-                }
-                Instruction::Variable(name, value) => {
-                    format!("{name} = {}", value.codegen(platform))
-                }
-                Instruction::If(condition, true_block, false_block) => format!(
-                    "if {} {} else {}",
-                    condition.codegen(platform.clone()),
-                    codegen_block(true_block.clone(), platform.clone()),
-                    codegen_block(false_block.clone(), platform)
-                ),
-                Instruction::While(condition, code_block) => format!(
-                    "while {} {}",
-                    condition.codegen(platform.clone()),
-                    codegen_block(code_block.clone(), platform.clone()),
-                ),
-                Instruction::Function(name, args, code_block) => format!(
-                    "function {name}({}) {}",
-                    args.join(", "),
-                    codegen_block(code_block.clone(), platform.clone()),
-                ),
-                Instruction::Comment(data) => {
-                    if data.contains("\n") {
-                        format!("/* {data} */")
-                    } else {
-                        format!("// {data}")
+    fn codegen(&self, platform: Platform, indent: usize) -> String {
+        "    ".repeat(indent)
+            + &match platform.clone() {
+                Platform::JavaScript => match self {
+                    Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
+                    Instruction::Let(name, value) => {
+                        format!("let {name} = {}", value.codegen(platform))
                     }
-                }
-                Instruction::Return(v) => {
-                    if v.clone().is_some() {
-                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
-                    } else {
-                        "return".to_string()
+                    Instruction::Const(name, value) => {
+                        format!("const {name} = {}", value.codegen(platform))
                     }
-                }
-            },
-            Platform::Ruby => match self {
-                Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
-                Instruction::Let(name, value) => {
-                    format!("{name} = {}", value.codegen(platform))
-                }
-                Instruction::Const(name, value) => {
-                    format!("{name} = {}", value.codegen(platform))
-                }
-                Instruction::Variable(name, value) => {
-                    format!("{name} = {}", value.codegen(platform))
-                }
-                Instruction::If(condition, true_block, false_block) => format!(
-                    "if {}\n{}\nelse\n{}\nend",
-                    condition.codegen(platform.clone()),
-                    codegen_block(true_block.clone(), platform.clone()),
-                    codegen_block(false_block.clone(), platform)
-                ),
-                Instruction::While(condition, code_block) => format!(
-                    "while {} do\n{}\nend",
-                    condition.codegen(platform.clone()),
-                    codegen_block(code_block.clone(), platform.clone()),
-                ),
-                Instruction::Function(name, args, code_block) => format!(
-                    "def {name}({})\n{}\nend",
-                    args.join(", "),
-                    codegen_block(code_block.clone(), platform.clone()),
-                ),
-                Instruction::Comment(data) => {
-                    if data.contains("\n") {
-                        format!("=begin\n{data}\n=end")
-                    } else {
-                        format!("# {data}")
+                    Instruction::Variable(name, value) => {
+                        format!("{name} = {}", value.codegen(platform))
                     }
-                }
-                Instruction::Return(v) => {
-                    if v.clone().is_some() {
-                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
-                    } else {
-                        "return".to_string()
+                    Instruction::If(condition, true_block, false_block) => format!(
+                        "if {} {{\n{}\n}} else {{\n{}",
+                        condition.codegen(platform.clone()),
+                        codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                        codegen_block(false_block.clone(), platform, indent + 1)
+                    ),
+                    Instruction::While(condition, code_block) => format!(
+                        "while {} {{\n{}\n}}",
+                        condition.codegen(platform.clone()),
+                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    ),
+                    Instruction::Function(name, args, code_block) => format!(
+                        "function {name}({}) {{\n{}\n}}",
+                        args.join(", "),
+                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    ),
+                    Instruction::Comment(data) => {
+                        if data.contains("\n") {
+                            format!("/* {data} */")
+                        } else {
+                            format!("// {data}")
+                        }
                     }
-                }
-            },
-        }
+                    Instruction::Return(v) => {
+                        if v.clone().is_some() {
+                            format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                        } else {
+                            "return".to_string()
+                        }
+                    }
+                },
+                Platform::Ruby => match self {
+                    Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
+                    Instruction::Let(name, value) => {
+                        format!("{name} = {}", value.codegen(platform))
+                    }
+                    Instruction::Const(name, value) => {
+                        format!("{name} = {}", value.codegen(platform))
+                    }
+                    Instruction::Variable(name, value) => {
+                        format!("{name} = {}", value.codegen(platform))
+                    }
+                    Instruction::If(condition, true_block, false_block) => format!(
+                        "if {}\n{}\nelse\n{}\nend",
+                        condition.codegen(platform.clone()),
+                        codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                        codegen_block(false_block.clone(), platform, indent + 1)
+                    ),
+                    Instruction::While(condition, code_block) => format!(
+                        "while {} do\n{}\nend",
+                        condition.codegen(platform.clone()),
+                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    ),
+                    Instruction::Function(name, args, code_block) => format!(
+                        "def {name}({})\n{}\nend",
+                        args.join(", "),
+                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    ),
+                    Instruction::Comment(data) => {
+                        if data.contains("\n") {
+                            format!("=begin\n{data}\n=end")
+                        } else {
+                            format!("# {data}")
+                        }
+                    }
+                    Instruction::Return(v) => {
+                        if v.clone().is_some() {
+                            format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                        } else {
+                            "return".to_string()
+                        }
+                    }
+                },
+            }
     }
 }
 
@@ -317,13 +318,13 @@ impl Operator {
 }
 
 /// generate transpiled code of blocked
-fn codegen_block(program: Block, platform: Platform) -> String {
+fn codegen_block(program: Block, platform: Platform, indent: usize) -> String {
     match platform {
         Platform::JavaScript => format!(
-            "{{\n{}\n}}",
+            "{}",
             program
                 .iter()
-                .map(|x| x.codegen(platform.clone()))
+                .map(|x| x.codegen(platform.clone(), indent))
                 .collect::<Vec<String>>()
                 .join(";\n")
         ),
@@ -331,7 +332,7 @@ fn codegen_block(program: Block, platform: Platform) -> String {
             "{}",
             program
                 .iter()
-                .map(|x| x.codegen(platform.clone()))
+                .map(|x| x.codegen(platform.clone(), indent))
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
@@ -342,7 +343,7 @@ fn codegen_block(program: Block, platform: Platform) -> String {
 pub fn transpile_javascript(program: Block) -> String {
     format!(
         "// Sila transpiled this code\n{}",
-        codegen_block(program, Platform::JavaScript)
+        codegen_block(program, Platform::JavaScript, 0)
     )
 }
 
@@ -350,6 +351,6 @@ pub fn transpile_javascript(program: Block) -> String {
 pub fn transpile_ruby(program: Block) -> String {
     format!(
         "# Sila transpiled this code\n{}",
-        codegen_block(program, Platform::Ruby)
+        codegen_block(program, Platform::Ruby, 0)
     )
 }
