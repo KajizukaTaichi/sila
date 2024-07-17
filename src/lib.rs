@@ -5,6 +5,7 @@ use std::collections::HashMap;
 enum Platform {
     JavaScript,
     Ruby,
+    Python,
 }
 
 /// Deta type
@@ -86,6 +87,36 @@ impl Type {
                             })
                             .collect::<Vec<String>>()
                             .join(", ")
+                    ),
+                    Type::Symbol(s) => s,
+                }
+            ),
+            Platform::Python => format!(
+                "{}",
+                match self.clone() {
+                    Type::Integer(i) => i.to_string(),
+                    Type::Float(f) => f.to_string(),
+                    Type::String(s) => format!("'{s}'"),
+                    Type::Array(a) => format!(
+                        "[{}]",
+                        a.iter()
+                            .map(|i| i.clone().codegen(platform.clone()))
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    ),
+                    Type::Bool(b) => if b { "True" } else { "False" }.to_string(),
+                    Type::Dict(d) => format!(
+                        "{{{}}}",
+                        d.iter()
+                            .map(|(k, v)| {
+                                format!(
+                                    "'{}': {}",
+                                    k.codegen(platform.clone()),
+                                    v.codegen(platform.clone())
+                                )
+                            })
+                            .collect::<Vec<String>>()
+                            .join(",")
                     ),
                     Type::Symbol(s) => s,
                 }
@@ -237,6 +268,61 @@ impl Instruction {
                     }
                 }
             },
+            Platform::Python => match self {
+                Instruction::Print(expr) => format!("print({})", expr.codegen(platform)),
+                Instruction::Let(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Const(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Variable(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::If(condition, true_block, false_block) => {
+                    if let Some(false_block) = false_block {
+                        format!(
+                            "if {}:\n{}\nelse:\n{}\n",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), true),
+                            codegen_block(false_block.clone(), platform, true)
+                        )
+                    } else {
+                        format!(
+                            "if {}:\n{}\n",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), true),
+                        )
+                    }
+                }
+
+                Instruction::While(condition, code_block) => format!(
+                    "while {}:\n{}\n",
+                    condition.codegen(platform.clone()),
+                    codegen_block(code_block.clone(), platform.clone(), true),
+                ),
+                Instruction::Break => "break".to_string(),
+                Instruction::Continue => "continue".to_string(),
+                Instruction::Function(name, args, code_block) => format!(
+                    "def {name}({}):\n{}\n",
+                    args.join(", "),
+                    codegen_block(code_block.clone(), platform.clone(), true),
+                ),
+                Instruction::Return(v) => {
+                    if v.clone().is_some() {
+                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                    } else {
+                        "return".to_string()
+                    }
+                }
+                Instruction::Comment(data) => {
+                    if data.contains("\n") {
+                        format!("\"\"\"\n{data}\n\"\"\"")
+                    } else {
+                        format!("# {data}")
+                    }
+                }
+            },
         }
     }
 }
@@ -260,7 +346,7 @@ impl Expr {
     /// Generate the transpliled code
     fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
-            Platform::JavaScript | Platform::Ruby => match self {
+            Platform::JavaScript | Platform::Ruby | Platform::Python => match self {
                 Expr::Expr(exprs) => format!(
                     "({})",
                     exprs
@@ -339,9 +425,26 @@ impl Operator {
                 Operator::And => "&&",
                 Operator::Or => "||",
                 Operator::Not => "!",
-            }
-            .to_string(),
+            },
+            Platform::Python => match self {
+                Operator::Add => "+",
+                Operator::Sub => "-",
+                Operator::Mul => "*",
+                Operator::Div => "/",
+                Operator::Pow => "**",
+                Operator::Mod => "%",
+                Operator::Equal => "==",
+                Operator::NotEq => "!=",
+                Operator::Less => "<",
+                Operator::LessEq => "<=",
+                Operator::Greater => ">",
+                Operator::GreaterEq => ">=",
+                Operator::And => "and",
+                Operator::Or => "or",
+                Operator::Not => "not",
+            },
         }
+        .to_string()
     }
 }
 
@@ -366,7 +469,7 @@ fn codegen_block(program: Block, platform: Platform, indent: bool) -> String {
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
-        Platform::Ruby => format!(
+        Platform::Ruby | Platform::Python => format!(
             "{}",
             program
                 .iter()
@@ -400,5 +503,13 @@ pub fn transpile_ruby(program: Block) -> String {
     format!(
         "# Sila transpiled this code\n{}",
         codegen_block(program, Platform::Ruby, false)
+    )
+}
+
+/// Transpile to python
+pub fn transpile_python(program: Block) -> String {
+    format!(
+        "# Sila transpiled this code\n{}",
+        codegen_block(program, Platform::Python, false)
     )
 }

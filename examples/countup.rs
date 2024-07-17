@@ -1,5 +1,6 @@
 use sila_transpiler_infrastructure::{
-    transpile_javascript, transpile_ruby, Block, Expr, Instruction, Operator, Type,
+    transpile_javascript, transpile_python, transpile_ruby, Block, Expr, Instruction, Operator,
+    Type,
 };
 
 fn main() {
@@ -48,5 +49,6 @@ fn main() {
         ),
     ];
     println!("JavaScript:\n{}\n", transpile_javascript(program.clone()));
-    println!("Ruby:\n{}\n", transpile_ruby(program));
+    println!("Ruby:\n{}\n", transpile_ruby(program.clone()));
+    println!("Python:\n{}\n", transpile_python(program));
 }
