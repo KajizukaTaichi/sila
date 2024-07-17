@@ -112,104 +112,111 @@ pub enum Instruction {
     If(Expr, Block, Block),
     /// While loop
     While(Expr, Block),
+    /// Break the loop
+    Break,
+    /// Continue the loop
+    Continue,
     /// Define function
     Function(String, Vec<String>, Block),
-    /// Code comment
-    Comment(String),
     /// Return value
     Return(Option<Expr>),
+    /// Code comment
+    Comment(String),
 }
 
 impl Instruction {
     /// Generate the transpliled code
     fn codegen(&self, platform: Platform, indent: usize) -> String {
-        "    ".repeat(indent)
-            + &match platform.clone() {
-                Platform::JavaScript => match self {
-                    Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
-                    Instruction::Let(name, value) => {
-                        format!("let {name} = {}", value.codegen(platform))
+        match platform.clone() {
+            Platform::JavaScript => match self {
+                Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
+                Instruction::Let(name, value) => {
+                    format!("let {name} = {}", value.codegen(platform))
+                }
+                Instruction::Const(name, value) => {
+                    format!("const {name} = {}", value.codegen(platform))
+                }
+                Instruction::Variable(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::If(condition, true_block, false_block) => format!(
+                    "if {} {{\n{}\n}} else {{\n{}\n}}",
+                    condition.codegen(platform.clone()),
+                    codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(false_block.clone(), platform, indent + 1)
+                ),
+                Instruction::While(condition, code_block) => format!(
+                    "while {} {{\n{}\n}}",
+                    condition.codegen(platform.clone()),
+                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                ),
+                Instruction::Break => "break".to_string(),
+                Instruction::Continue => "continue".to_string(),
+                Instruction::Function(name, args, code_block) => format!(
+                    "function {name}({}) {{\n{}\n}}",
+                    args.join(", "),
+                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                ),
+                Instruction::Return(v) => {
+                    if v.clone().is_some() {
+                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                    } else {
+                        "return".to_string()
                     }
-                    Instruction::Const(name, value) => {
-                        format!("const {name} = {}", value.codegen(platform))
+                }
+                Instruction::Comment(data) => {
+                    if data.contains("\n") {
+                        format!("/* {data} */")
+                    } else {
+                        format!("// {data}")
                     }
-                    Instruction::Variable(name, value) => {
-                        format!("{name} = {}", value.codegen(platform))
+                }
+            },
+            Platform::Ruby => match self {
+                Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
+                Instruction::Let(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Const(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::Variable(name, value) => {
+                    format!("{name} = {}", value.codegen(platform))
+                }
+                Instruction::If(condition, true_block, false_block) => format!(
+                    "if {}\n{}\nelse\n{}\nend",
+                    condition.codegen(platform.clone()),
+                    codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(false_block.clone(), platform, indent + 1)
+                ),
+                Instruction::While(condition, code_block) => format!(
+                    "while {} do\n{}\nend",
+                    condition.codegen(platform.clone()),
+                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                ),
+                Instruction::Break => "break".to_string(),
+                Instruction::Continue => "next".to_string(),
+                Instruction::Function(name, args, code_block) => format!(
+                    "def {name}({})\n{}\nend",
+                    args.join(", "),
+                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                ),
+                Instruction::Return(v) => {
+                    if v.clone().is_some() {
+                        format!("return {}", v.clone().unwrap().codegen(platform.clone()))
+                    } else {
+                        "return".to_string()
                     }
-                    Instruction::If(condition, true_block, false_block) => format!(
-                        "if {} {{\n{}\n}} else {{\n{}",
-                        condition.codegen(platform.clone()),
-                        codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                        codegen_block(false_block.clone(), platform, indent + 1)
-                    ),
-                    Instruction::While(condition, code_block) => format!(
-                        "while {} {{\n{}\n}}",
-                        condition.codegen(platform.clone()),
-                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
-                    ),
-                    Instruction::Function(name, args, code_block) => format!(
-                        "function {name}({}) {{\n{}\n}}",
-                        args.join(", "),
-                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
-                    ),
-                    Instruction::Comment(data) => {
-                        if data.contains("\n") {
-                            format!("/* {data} */")
-                        } else {
-                            format!("// {data}")
-                        }
+                }
+                Instruction::Comment(data) => {
+                    if data.contains("\n") {
+                        format!("=begin\n{data}\n=end")
+                    } else {
+                        format!("# {data}")
                     }
-                    Instruction::Return(v) => {
-                        if v.clone().is_some() {
-                            format!("return {}", v.clone().unwrap().codegen(platform.clone()))
-                        } else {
-                            "return".to_string()
-                        }
-                    }
-                },
-                Platform::Ruby => match self {
-                    Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
-                    Instruction::Let(name, value) => {
-                        format!("{name} = {}", value.codegen(platform))
-                    }
-                    Instruction::Const(name, value) => {
-                        format!("{name} = {}", value.codegen(platform))
-                    }
-                    Instruction::Variable(name, value) => {
-                        format!("{name} = {}", value.codegen(platform))
-                    }
-                    Instruction::If(condition, true_block, false_block) => format!(
-                        "if {}\n{}\nelse\n{}\nend",
-                        condition.codegen(platform.clone()),
-                        codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                        codegen_block(false_block.clone(), platform, indent + 1)
-                    ),
-                    Instruction::While(condition, code_block) => format!(
-                        "while {} do\n{}\nend",
-                        condition.codegen(platform.clone()),
-                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
-                    ),
-                    Instruction::Function(name, args, code_block) => format!(
-                        "def {name}({})\n{}\nend",
-                        args.join(", "),
-                        codegen_block(code_block.clone(), platform.clone(), indent + 1),
-                    ),
-                    Instruction::Comment(data) => {
-                        if data.contains("\n") {
-                            format!("=begin\n{data}\n=end")
-                        } else {
-                            format!("# {data}")
-                        }
-                    }
-                    Instruction::Return(v) => {
-                        if v.clone().is_some() {
-                            format!("return {}", v.clone().unwrap().codegen(platform.clone()))
-                        } else {
-                            "return".to_string()
-                        }
-                    }
-                },
-            }
+                }
+            },
+        }
     }
 }
 
@@ -327,12 +334,24 @@ fn codegen_block(program: Block, platform: Platform, indent: usize) -> String {
                 .map(|x| x.codegen(platform.clone(), indent))
                 .collect::<Vec<String>>()
                 .join(";\n")
+                .split("\n")
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|x| "    ".repeat(indent) + &x)
+                .collect::<Vec<String>>()
+                .join("\n")
         ),
         Platform::Ruby => format!(
             "{}",
             program
                 .iter()
                 .map(|x| x.codegen(platform.clone(), indent))
+                .collect::<Vec<String>>()
+                .join("\n")
+                .split("\n")
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|x| "    ".repeat(indent) + &x)
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
