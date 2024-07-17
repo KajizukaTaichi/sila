@@ -15,15 +15,21 @@ fn main() {
             ])))],
         ),
         Instruction::Let("count".to_string(), Expr::Literal(Type::Integer(0))),
-        Instruction::Let(
-            "limit".to_string(),
-            Expr::Library(
-                Library::ToInterger,
-                vec![Expr::Library(
-                    Library::Input,
-                    vec![Expr::Literal(Type::String("limit: ".to_string()))],
-                )],
-            ),
+        Instruction::TryError(
+            vec![Instruction::Let(
+                "limit".to_string(),
+                Expr::Library(
+                    Library::ToInterger,
+                    vec![Expr::Library(
+                        Library::Input,
+                        vec![Expr::Literal(Type::String("limit: ".to_string()))],
+                    )],
+                ),
+            )],
+            vec![Instruction::Let(
+                "limit".to_string(),
+                Expr::Literal(Type::Integer(10)),
+            )],
         ),
         Instruction::While(
             Expr::Expr(vec![

@@ -1,7 +1,7 @@
 # Sila
 The simple transpiler infrastructure for every platform.<br> But, now is support JavaScript, Ruby and Python. Other platforms are coming soon!
 
-# [Example](/examples/countup.rs)
+## [Example](/examples/countup.rs)
 ```rust
 use sila_transpiler_infrastructure::{
     transpile_javascript, transpile_python, transpile_ruby, Block, Expr, Instruction, Library,
@@ -20,15 +20,21 @@ fn main() {
             ])))],
         ),
         Instruction::Let("count".to_string(), Expr::Literal(Type::Integer(0))),
-        Instruction::Let(
-            "limit".to_string(),
-            Expr::Library(
-                Library::ToInterger,
-                vec![Expr::Library(
-                    Library::Input,
-                    vec![Expr::Literal(Type::String("limit: ".to_string()))],
-                )],
-            ),
+        Instruction::TryError(
+            vec![Instruction::Let(
+                "limit".to_string(),
+                Expr::Library(
+                    Library::ToInterger,
+                    vec![Expr::Library(
+                        Library::Input,
+                        vec![Expr::Literal(Type::String("limit: ".to_string()))],
+                    )],
+                ),
+            )],
+            vec![Instruction::Let(
+                "limit".to_string(),
+                Expr::Literal(Type::Integer(10)),
+            )],
         ),
         Instruction::While(
             Expr::Expr(vec![
@@ -76,7 +82,11 @@ function show(count) {
     return (`counter value is ` + String(count))
 };
 let count = 0;
-let limit = parseInt(prompt(`limit: `));
+try {
+    let limit = parseInt(prompt(`limit: `))
+} catch {
+    let limit = 10
+};
 while (count < limit) {
     count = (count + 1);
     if (count % 2 == 0) {
@@ -96,7 +106,11 @@ def show(count)
     return ("counter value is " + String(count))
 end
 count = 0
-limit = Integer(input("limit: "))
+begin
+    limit = Integer(input("limit: "))
+rescue
+    limit = 10
+end
 while (count < limit) do
     count = (count + 1)
     if (count % 2 == 0)
@@ -109,14 +123,14 @@ Python:
 # Sila transpiled this code
 def show(count):
     return ('counter value is ' + str(count))
-
 count = 0
-limit = int(input('limit: '))
+try:
+    limit = int(input('limit: '))
+except:
+    limit = 10
 while (count < limit):
     count = (count + 1)
     if (count % 2 == 0):
         continue
-
     print(show(count))
-
 ```

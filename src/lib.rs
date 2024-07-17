@@ -153,6 +153,8 @@ pub enum Instruction {
     Return(Option<Expr>),
     /// Code comment
     Comment(String),
+    /// Exception handling
+    TryError(Block, Block),
 }
 
 impl Instruction {
@@ -212,6 +214,11 @@ impl Instruction {
                         format!("// {data}")
                     }
                 }
+                Instruction::TryError(try_code, handle_code) => format!(
+                    "try {{\n{}\n}} catch {{\n{}\n}}",
+                    codegen_block(try_code.clone(), platform.clone(), true),
+                    codegen_block(handle_code.clone(), platform.clone(), true),
+                ),
             },
             Platform::Ruby => match self {
                 Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
@@ -240,7 +247,6 @@ impl Instruction {
                         )
                     }
                 }
-
                 Instruction::While(condition, code_block) => format!(
                     "while {} do\n{}\nend",
                     condition.codegen(platform.clone()),
@@ -267,6 +273,11 @@ impl Instruction {
                         format!("# {data}")
                     }
                 }
+                Instruction::TryError(try_code, handle_code) => format!(
+                    "begin\n{}\nrescue\n{}\nend",
+                    codegen_block(try_code.clone(), platform.clone(), true),
+                    codegen_block(handle_code.clone(), platform.clone(), true),
+                ),
             },
             Platform::Python => match self {
                 Instruction::Print(expr) => format!("print({})", expr.codegen(platform)),
@@ -282,14 +293,14 @@ impl Instruction {
                 Instruction::If(condition, true_block, false_block) => {
                     if let Some(false_block) = false_block {
                         format!(
-                            "if {}:\n{}\nelse:\n{}\n",
+                            "if {}:\n{}\nelse:\n{}",
                             condition.codegen(platform.clone()),
                             codegen_block(true_block.clone(), platform.clone(), true),
                             codegen_block(false_block.clone(), platform, true)
                         )
                     } else {
                         format!(
-                            "if {}:\n{}\n",
+                            "if {}:\n{}",
                             condition.codegen(platform.clone()),
                             codegen_block(true_block.clone(), platform.clone(), true),
                         )
@@ -297,14 +308,14 @@ impl Instruction {
                 }
 
                 Instruction::While(condition, code_block) => format!(
-                    "while {}:\n{}\n",
+                    "while {}:\n{}",
                     condition.codegen(platform.clone()),
                     codegen_block(code_block.clone(), platform.clone(), true),
                 ),
                 Instruction::Break => "break".to_string(),
                 Instruction::Continue => "continue".to_string(),
                 Instruction::Function(name, args, code_block) => format!(
-                    "def {name}({}):\n{}\n",
+                    "def {name}({}):\n{}",
                     args.join(", "),
                     codegen_block(code_block.clone(), platform.clone(), true),
                 ),
@@ -322,6 +333,11 @@ impl Instruction {
                         format!("# {data}")
                     }
                 }
+                Instruction::TryError(try_code, handle_code) => format!(
+                    "try:\n{}\nexcept:\n{}",
+                    codegen_block(try_code.clone(), platform.clone(), true),
+                    codegen_block(handle_code.clone(), platform.clone(), true),
+                ),
             },
         }
     }
