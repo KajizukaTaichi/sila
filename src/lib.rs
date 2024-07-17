@@ -338,8 +338,10 @@ pub enum Expr {
     Literal(Type),
     /// Variable reference
     Variable(String),
-    /// Call library function
+    /// Call user defined function
     Call(String, Vec<Expr>),
+    /// Standrad library of the language
+    Library(Library, Vec<Expr>),
 }
 
 impl Expr {
@@ -365,12 +367,20 @@ impl Expr {
                         .collect::<Vec<String>>()
                         .join(", ")
                 ),
+                Expr::Library(identify, args) => format!(
+                    "{}({})",
+                    identify.codegen(platform.clone()),
+                    args.iter()
+                        .map(|i| i.codegen(platform.clone()))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                ),
             },
         }
     }
 }
 
-/// Operator of expression
+/// Operator of the expression
 #[derive(Debug, Clone)]
 pub enum Operator {
     /// Addition
@@ -448,6 +458,46 @@ impl Operator {
     }
 }
 
+/// Standard library of the language
+#[derive(Debug, Clone)]
+pub enum Library {
+    /// Standard user input
+    Input,
+    /// Cast to string type
+    ToString,
+    /// Cast to string type
+    ToInterger,
+    /// Cast to float type
+    ToFloat,
+}
+
+impl Library {
+    /// Generate the transpliled code
+    fn codegen(&self, platform: Platform) -> String {
+        match platform.clone() {
+            Platform::JavaScript => match self {
+                Library::Input => "prompt",
+                Library::ToString => "String",
+                Library::ToInterger => "parseInt",
+                Library::ToFloat => "parseFloat",
+            },
+            Platform::Ruby => match self {
+                Library::Input => "input",
+                Library::ToString => "String",
+                Library::ToInterger => "Integer",
+                Library::ToFloat => "Float",
+            },
+            Platform::Python => match self {
+                Library::Input => "input",
+                Library::ToString => "str",
+                Library::ToInterger => "int",
+                Library::ToFloat => "float",
+            },
+        }
+        .to_string()
+    }
+}
+
 /// generate transpiled code of blocked
 fn codegen_block(program: Block, platform: Platform, indent: bool) -> String {
     match platform {
@@ -501,7 +551,7 @@ pub fn transpile_javascript(program: Block) -> String {
 /// Transpile to Ruby
 pub fn transpile_ruby(program: Block) -> String {
     format!(
-        "# Sila transpiled this code\n{}",
+        "# Sila transpiled this code\ndef input(prompt)\n    print prompt\n    return gets.chomp\nend\n\n{}",
         codegen_block(program, Platform::Ruby, false)
     )
 }
