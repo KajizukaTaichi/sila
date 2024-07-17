@@ -126,7 +126,7 @@ pub enum Instruction {
 
 impl Instruction {
     /// Generate the transpliled code
-    fn codegen(&self, platform: Platform, indent: usize) -> String {
+    fn codegen(&self, platform: Platform) -> String {
         match platform.clone() {
             Platform::JavaScript => match self {
                 Instruction::Print(expr) => format!("console.log({})", expr.codegen(platform)),
@@ -144,28 +144,28 @@ impl Instruction {
                         format!(
                             "if {} {{\n{}\n}} else {{\n{}\n}}",
                             condition.codegen(platform.clone()),
-                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                            codegen_block(false_block.clone(), platform, indent + 1)
+                            codegen_block(true_block.clone(), platform.clone(), true),
+                            codegen_block(false_block.clone(), platform, true)
                         )
                     } else {
                         format!(
                             "if {} {{\n{}\n}}",
                             condition.codegen(platform.clone()),
-                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                            codegen_block(true_block.clone(), platform.clone(), true),
                         )
                     }
                 }
                 Instruction::While(condition, code_block) => format!(
                     "while {} {{\n{}\n}}",
                     condition.codegen(platform.clone()),
-                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(code_block.clone(), platform.clone(), true),
                 ),
                 Instruction::Break => "break".to_string(),
                 Instruction::Continue => "continue".to_string(),
                 Instruction::Function(name, args, code_block) => format!(
                     "function {name}({}) {{\n{}\n}}",
                     args.join(", "),
-                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(code_block.clone(), platform.clone(), true),
                 ),
                 Instruction::Return(v) => {
                     if v.clone().is_some() {
@@ -198,14 +198,14 @@ impl Instruction {
                         format!(
                             "if {}\n{}\nelse\n{}\nend",
                             condition.codegen(platform.clone()),
-                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                            codegen_block(false_block.clone(), platform, indent + 1)
+                            codegen_block(true_block.clone(), platform.clone(), true),
+                            codegen_block(false_block.clone(), platform, true)
                         )
                     } else {
                         format!(
                             "if {}\n{}\nend",
                             condition.codegen(platform.clone()),
-                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                            codegen_block(true_block.clone(), platform.clone(), true),
                         )
                     }
                 }
@@ -213,14 +213,14 @@ impl Instruction {
                 Instruction::While(condition, code_block) => format!(
                     "while {} do\n{}\nend",
                     condition.codegen(platform.clone()),
-                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(code_block.clone(), platform.clone(), true),
                 ),
                 Instruction::Break => "break".to_string(),
                 Instruction::Continue => "next".to_string(),
                 Instruction::Function(name, args, code_block) => format!(
                     "def {name}({})\n{}\nend",
                     args.join(", "),
-                    codegen_block(code_block.clone(), platform.clone(), indent + 1),
+                    codegen_block(code_block.clone(), platform.clone(), true),
                 ),
                 Instruction::Return(v) => {
                     if v.clone().is_some() {
@@ -346,19 +346,23 @@ impl Operator {
 }
 
 /// generate transpiled code of blocked
-fn codegen_block(program: Block, platform: Platform, indent: usize) -> String {
+fn codegen_block(program: Block, platform: Platform, indent: bool) -> String {
     match platform {
         Platform::JavaScript => format!(
             "{}",
             program
                 .iter()
-                .map(|x| x.codegen(platform.clone(), indent))
+                .map(|x| x.codegen(platform.clone()))
                 .collect::<Vec<String>>()
                 .join(";\n")
                 .split("\n")
                 .collect::<Vec<&str>>()
                 .iter()
-                .map(|x| "    ".repeat(indent) + &x)
+                .map(|x| if indent {
+                    "    ".to_string() + &x
+                } else {
+                    x.to_string()
+                })
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
@@ -366,13 +370,17 @@ fn codegen_block(program: Block, platform: Platform, indent: usize) -> String {
             "{}",
             program
                 .iter()
-                .map(|x| x.codegen(platform.clone(), indent))
+                .map(|x| x.codegen(platform.clone()))
                 .collect::<Vec<String>>()
                 .join("\n")
                 .split("\n")
                 .collect::<Vec<&str>>()
                 .iter()
-                .map(|x| "    ".repeat(indent) + &x)
+                .map(|x| if indent {
+                    "    ".to_string() + &x
+                } else {
+                    x.to_string()
+                })
                 .collect::<Vec<String>>()
                 .join("\n")
         ),
@@ -383,7 +391,7 @@ fn codegen_block(program: Block, platform: Platform, indent: usize) -> String {
 pub fn transpile_javascript(program: Block) -> String {
     format!(
         "// Sila transpiled this code\n{}",
-        codegen_block(program, Platform::JavaScript, 0)
+        codegen_block(program, Platform::JavaScript, false)
     )
 }
 
@@ -391,6 +399,6 @@ pub fn transpile_javascript(program: Block) -> String {
 pub fn transpile_ruby(program: Block) -> String {
     format!(
         "# Sila transpiled this code\n{}",
-        codegen_block(program, Platform::Ruby, 0)
+        codegen_block(program, Platform::Ruby, false)
     )
 }
