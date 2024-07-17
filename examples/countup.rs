@@ -29,6 +29,17 @@ fn main() {
                         Expr::Literal(Type::Integer(1)),
                     ]),
                 ),
+                Instruction::If(
+                    Expr::Expr(vec![
+                        Expr::Variable("i".to_string()),
+                        Expr::Operator(Operator::Mod),
+                        Expr::Literal(Type::Integer(2)),
+                        Expr::Operator(Operator::Equal),
+                        Expr::Literal(Type::Integer(0)),
+                    ]),
+                    vec![Instruction::Continue],
+                    vec![],
+                ),
                 Instruction::Print(Expr::Call(
                     "show".to_string(),
                     vec![Expr::Variable("i".to_string())],
