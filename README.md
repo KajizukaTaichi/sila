@@ -34,6 +34,17 @@ fn main() {
                         Expr::Literal(Type::Integer(1)),
                     ]),
                 ),
+                Instruction::If(
+                    Expr::Expr(vec![
+                        Expr::Variable("i".to_string()),
+                        Expr::Operator(Operator::Mod),
+                        Expr::Literal(Type::Integer(2)),
+                        Expr::Operator(Operator::Equal),
+                        Expr::Literal(Type::Integer(0)),
+                    ]),
+                    vec![Instruction::Continue],
+                    None,
+                ),
                 Instruction::Print(Expr::Call(
                     "show".to_string(),
                     vec![Expr::Variable("i".to_string())],
@@ -55,6 +66,9 @@ function show(i) {
 let i = 0;
 while (i < 10) {
     i = (i + 1);
+    if (i % 2 == 0) {
+        continue
+    };
     console.log(show(i))
 }
 
@@ -66,6 +80,9 @@ end
 i = 0
 while (i < 10) do
     i = (i + 1)
+    if (i % 2 == 0)
+        next
+    end
     puts show(i)
 end
 
