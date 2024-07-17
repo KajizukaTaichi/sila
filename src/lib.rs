@@ -109,7 +109,7 @@ pub enum Instruction {
     /// Change variable's data
     Variable(String, Expr),
     /// If-else conditional branch
-    If(Expr, Block, Block),
+    If(Expr, Block, Option<Block>),
     /// While loop
     While(Expr, Block),
     /// Break the loop
@@ -139,12 +139,22 @@ impl Instruction {
                 Instruction::Variable(name, value) => {
                     format!("{name} = {}", value.codegen(platform))
                 }
-                Instruction::If(condition, true_block, false_block) => format!(
-                    "if {} {{\n{}\n}} else {{\n{}\n}}",
-                    condition.codegen(platform.clone()),
-                    codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                    codegen_block(false_block.clone(), platform, indent + 1)
-                ),
+                Instruction::If(condition, true_block, false_block) => {
+                    if let Some(false_block) = false_block {
+                        format!(
+                            "if {} {{\n{}\n}} else {{\n{}\n}}",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                            codegen_block(false_block.clone(), platform, indent + 1)
+                        )
+                    } else {
+                        format!(
+                            "if {} {{\n{}\n}}",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                        )
+                    }
+                }
                 Instruction::While(condition, code_block) => format!(
                     "while {} {{\n{}\n}}",
                     condition.codegen(platform.clone()),
@@ -183,12 +193,23 @@ impl Instruction {
                 Instruction::Variable(name, value) => {
                     format!("{name} = {}", value.codegen(platform))
                 }
-                Instruction::If(condition, true_block, false_block) => format!(
-                    "if {}\n{}\nelse\n{}\nend",
-                    condition.codegen(platform.clone()),
-                    codegen_block(true_block.clone(), platform.clone(), indent + 1),
-                    codegen_block(false_block.clone(), platform, indent + 1)
-                ),
+                Instruction::If(condition, true_block, false_block) => {
+                    if let Some(false_block) = false_block {
+                        format!(
+                            "if {}\n{}\nelse\n{}\nend",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                            codegen_block(false_block.clone(), platform, indent + 1)
+                        )
+                    } else {
+                        format!(
+                            "if {}\n{}\nend",
+                            condition.codegen(platform.clone()),
+                            codegen_block(true_block.clone(), platform.clone(), indent + 1),
+                        )
+                    }
+                }
+
                 Instruction::While(condition, code_block) => format!(
                     "while {} do\n{}\nend",
                     condition.codegen(platform.clone()),
