@@ -38,7 +38,7 @@ fn main() {
                         Expr::Literal(Type::Integer(0)),
                     ]),
                     vec![Instruction::Continue],
-                    vec![],
+                    None,
                 ),
                 Instruction::Print(Expr::Call(
                     "show".to_string(),
