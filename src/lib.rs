@@ -492,6 +492,8 @@ pub enum Library {
     ToFloat,
     /// Generate random float number between 0 and 1
     Random,
+    /// Rounding off the float number to integer
+    Round,
 }
 
 impl Library {
@@ -504,6 +506,7 @@ impl Library {
                 Library::ToInterger => "parseInt",
                 Library::ToFloat => "parseFloat",
                 Library::Random => "Math.random",
+                Library::Round => "Math.round",
             },
             Platform::Ruby => match self {
                 Library::Input => "input",
@@ -511,6 +514,7 @@ impl Library {
                 Library::ToInterger => "Integer",
                 Library::ToFloat => "Float",
                 Library::Random => "rand",
+                Library::Round => "round",
             },
             Platform::Python => match self {
                 Library::Input => "input",
@@ -518,6 +522,7 @@ impl Library {
                 Library::ToInterger => "int",
                 Library::ToFloat => "float",
                 Library::Random => "random.random",
+                Library::Round => "round",
             },
         }
         .to_string()
@@ -577,7 +582,7 @@ pub fn transpile_javascript(program: Block) -> String {
 /// Transpile to Ruby
 pub fn transpile_ruby(program: Block) -> String {
     format!(
-        "# Sila transpiled this code\ndef input(prompt)\n    print prompt\n    return gets.chomp\nend\n\n{}",
+        "# Sila transpiled this code\ndef input(prompt)\n    print prompt\n    return gets.chomp\nend\ndef round(n)\n    n.round()\nend\n\n{}",
         codegen_block(program, Platform::Ruby, false)
     )
 }
