@@ -29,7 +29,14 @@ fn main() {
             )],
             vec![Instruction::Variable(
                 "limit".to_string(),
-                Expr::Library(Library::Random, vec![]),
+                Expr::Library(
+                    Library::Round,
+                    vec![Expr::Expr(vec![
+                        Expr::Library(Library::Random, vec![]),
+                        Expr::Operator(Operator::Mul),
+                        Expr::Literal(Type::Integer(100)),
+                    ])],
+                ),
             )],
         ),
         Instruction::While(
