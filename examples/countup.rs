@@ -15,8 +15,9 @@ fn main() {
             ])))],
         ),
         Instruction::Let("count".to_string(), Expr::Literal(Type::Integer(0))),
+        Instruction::Let("limit".to_string(), Expr::Literal(Type::None)),
         Instruction::TryError(
-            vec![Instruction::Let(
+            vec![Instruction::Variable(
                 "limit".to_string(),
                 Expr::Library(
                     Library::ToInterger,
@@ -26,9 +27,9 @@ fn main() {
                     )],
                 ),
             )],
-            vec![Instruction::Let(
+            vec![Instruction::Variable(
                 "limit".to_string(),
-                Expr::Literal(Type::Integer(10)),
+                Expr::Library(Library::Random, vec![]),
             )],
         ),
         Instruction::While(
