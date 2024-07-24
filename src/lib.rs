@@ -25,6 +25,8 @@ pub enum Type {
     Dict(HashMap<Type, Type>),
     /// Symbol such as key of the hashmap, object and dictionary, etc
     Symbol(String),
+    /// Unique type that nothing value
+    None,
 }
 
 impl Type {
@@ -59,6 +61,7 @@ impl Type {
                             .join(",\n")
                     ),
                     Type::Symbol(s) => s,
+                    Type::None => "null".to_string(),
                 }
             ),
             Platform::Ruby => format!(
@@ -89,6 +92,7 @@ impl Type {
                             .join(", ")
                     ),
                     Type::Symbol(s) => s,
+                    Type::None => "nil".to_string(),
                 }
             ),
             Platform::Python => format!(
@@ -119,6 +123,7 @@ impl Type {
                             .join(",")
                     ),
                     Type::Symbol(s) => s,
+                    Type::None => "None".to_string(),
                 }
             ),
         }
@@ -485,6 +490,8 @@ pub enum Library {
     ToInterger,
     /// Cast to float type
     ToFloat,
+    /// Generate random float number between 0 and 1
+    Random,
 }
 
 impl Library {
@@ -496,18 +503,21 @@ impl Library {
                 Library::ToString => "String",
                 Library::ToInterger => "parseInt",
                 Library::ToFloat => "parseFloat",
+                Library::Random => "Math.random",
             },
             Platform::Ruby => match self {
                 Library::Input => "input",
                 Library::ToString => "String",
                 Library::ToInterger => "Integer",
                 Library::ToFloat => "Float",
+                Library::Random => "rand",
             },
             Platform::Python => match self {
                 Library::Input => "input",
                 Library::ToString => "str",
                 Library::ToInterger => "int",
                 Library::ToFloat => "float",
+                Library::Random => "random.random",
             },
         }
         .to_string()
@@ -575,7 +585,7 @@ pub fn transpile_ruby(program: Block) -> String {
 /// Transpile to python
 pub fn transpile_python(program: Block) -> String {
     format!(
-        "# Sila transpiled this code\n{}",
+        "# Sila transpiled this code\nimport random\n\n{}",
         codegen_block(program, Platform::Python, false)
     )
 }
