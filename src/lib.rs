@@ -160,6 +160,8 @@ pub enum Instruction {
     Comment(String),
     /// Exception handling
     TryError(Block, Block),
+    /// Import library
+    Import(String),
 }
 
 impl Instruction {
@@ -224,6 +226,7 @@ impl Instruction {
                     codegen_block(try_code.clone(), platform.clone(), true),
                     codegen_block(handle_code.clone(), platform.clone(), true),
                 ),
+                Instruction::Import(name) => format!("import {name} from '{name}'"),
             },
             Platform::Ruby => match self {
                 Instruction::Print(expr) => format!("puts {}", expr.codegen(platform)),
@@ -283,6 +286,7 @@ impl Instruction {
                     codegen_block(try_code.clone(), platform.clone(), true),
                     codegen_block(handle_code.clone(), platform.clone(), true),
                 ),
+                Instruction::Import(name) => format!("require {name}"),
             },
             Platform::Python => match self {
                 Instruction::Print(expr) => format!("print({})", expr.codegen(platform)),
@@ -343,6 +347,7 @@ impl Instruction {
                     codegen_block(try_code.clone(), platform.clone(), true),
                     codegen_block(handle_code.clone(), platform.clone(), true),
                 ),
+                Instruction::Import(name) => format!("import {name}"),
             },
         }
     }
